@@ -13,7 +13,7 @@ const descriptionInput = document.getElementById("description-input");
 
 
 
-const taskData = []; //store all the tasks along with their associated data, including title, due-date and description
+const taskData = JSON.parse(localStorage.getItem("data")) || []; //store all the tasks along with their associated data, including title, due-date and description
 let currentTask = {}; //tracking the state when editing and discarding tasks
 
 const addOrUpdateTask = () => {
@@ -28,8 +28,11 @@ const addOrUpdateTask = () => {
 
     if (dataArrIndex === -1){
         taskData.unshift(taskObj); //if the task is new, unshift will add the taskObj to the beginning of the taskData
+    } else {
+        taskData[dataArrIndex] = taskObj
     };
 
+    localStorage.setItem("data", JSON.stringify(taskData));
     updateTaskContainer();
     reset();
 
@@ -51,7 +54,21 @@ const updateTaskContainer = () => {
 };
 
 const deleteTask = (buttonEl) => {
-    const dataArrIndex = taskData.findIndex((item) => {item.id === buttonEl.parentElement.id});
+    const dataArrIndex = taskData.findIndex((item) => item.id === buttonEl.parentElement.id);
+    buttonEl.parentElement.remove(); //remove the task from the task container
+    taskData.splice(dataArrIndex, 1) //when the delete button is clicked, splice() remove the task from the taskData array
+    localStorage.setItem("data", JSON.stringify(taskData));
+};
+
+const editTask = (buttonEl) => { //when the edit button in task container is clicked
+    const dataArrIndex = taskData.findIndex((item) => item.id === buttonEl.parentElement.id);
+    currentTask = taskData[dataArrIndex];
+    titleInput.value = currentTask.title;
+    dateInput.value = currentTask.date;
+    descriptionInput.value = currentTask.description;
+    addOrUpdateTaskBtn.innerText = "Update Task";
+    taskForm.classList.toggle("hidden");
+
 };
 
 const reset = () => {
@@ -60,6 +77,11 @@ const reset = () => {
     descriptionInput.value = "";
     taskForm.classList.toggle("hidden");
     currentTask = {};
+    addOrUpdateTaskBtn.innerText = "Add Task";
+};
+
+if (taskData.length) {
+    updateTaskContainer();
 };
 
 openTaskFormBtn.addEventListener("click", () => {
@@ -68,7 +90,8 @@ openTaskFormBtn.addEventListener("click", () => {
 
 closeTaskFormBtn.addEventListener("click", () => {
     const formInputsContainValues = titleInput.value || dateInput.value || descriptionInput.value;
-    if(formInputsContainValues) {
+    const formInputValuesUpdated = titleInput.value !== currentTask.title || dateInput.value !== currentTask.date || descriptionInput.value !==currentTask.description;
+    if(formInputsContainValues && formInputValuesUpdated) {
         confirmCloseDialog.showModal();
     } else {
         reset();
